@@ -16,7 +16,8 @@
 - Naming: functions `snake_case`; generated queue types `foo_queue_t`
 - Includes: project headers first, then standard headers; keep includes minimal
 - Errors: return status codes (`queue_status_t`); avoid `abort()` in library code
-- Headers: `#ifndef/#define/#endif` guards; keep public API in `src/queue.h`
+- Headers: `#ifndef/#define/#endif` guards; keep public API in `src/queue.h`. Note that `src/queue_version.h` is a generated file.
+- Versioning: Managed via `project(version: ...)` in `meson.build`.
 
 ## Agent Rules
 - No Cursor/Copilot rules found (`.cursor/rules/`, `.cursorrules`, `.github/copilot-instructions.md`).

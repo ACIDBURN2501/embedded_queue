@@ -9,9 +9,26 @@ A small C11, embedded-oriented queue implemented as a typed ring buffer.
 ## Layout
 
 - `src/queue.h` – Public API (macro-generated typed queues).
-- `src/queue.c` – Header-only stub for building `libqueue`.
+- `src/queue_version.h.in` – Template for generating the version header.
+- `src/queue.c` – Stub for building `libqueue`.
 - `test/test_queue.c` – Overwrite-on-full tests + CAN message example.
 - `test/test_queue_fail.c` – Fail-on-full tests.
+
+## Versioning
+
+The project version is managed in `meson.build`. During the build process, a `queue_version.h` file is generated in the build directory.
+
+Both static (`libqueue.a`) and shared (`libqueue.so`) libraries are generated. For embedded targets, you typically want to link against the static library.
+
+You can check the version in your code:
+
+```c
+#include "queue.h"
+
+#if QUEUE_VERSION_MAJOR == 0
+    // handle legacy behavior
+#endif
+```
 
 ## Usage
 

@@ -17,6 +17,7 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+#include "queue_version.h"
 #include <stdbool.h>
 #include <stddef.h>
 
