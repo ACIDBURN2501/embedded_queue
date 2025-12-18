@@ -9,9 +9,17 @@
  * - Default behavior on full: overwrite oldest.
  *
  * Concurrency notes:
- * - Fail-on-full mode can be used without critical sections in strict SPSC.
- * - Overwrite-on-full requires the producer to advance the consumer index when
- *   full; define QUEUE_ENTER_CRITICAL/QUEUE_EXIT_CRITICAL appropriately.
+ * - This is a Single-Producer Single-Consumer (SPSC) queue.
+ * - In "Fail-on-full" mode (QUEUE_OVERWRITE_ON_FULL=0):
+ *   - Lock-free if the platform has atomic size_t writes and no memory
+ * reordering.
+ *   - Internal memory barriers are included to help prevent reordering.
+ * - In "Overwrite-on-full" mode (QUEUE_OVERWRITE_ON_FULL=1):
+ *   - NOT lock-free! The producer modifies 'tail', which is also modified by
+ * the consumer.
+ *   - Critical sections (QUEUE_ENTER_CRITICAL / QUEUE_EXIT_CRITICAL) ARE
+ * REQUIRED if the producer and consumer can preempt each other (e.g., ISR and
+ * Main).
  */
 
 #ifndef QUEUE_H
@@ -29,6 +37,14 @@
 
 #ifndef QUEUE_OVERWRITE_ON_FULL
 #define QUEUE_OVERWRITE_ON_FULL 1
+#endif
+
+#ifndef QUEUE_BARRIER
+#if defined(__GNUC__) || defined(__clang__)
+#define QUEUE_BARRIER() __asm__ volatile("" : : : "memory")
+#else
+#define QUEUE_BARRIER()
+#endif
 #endif
 
 #ifndef QUEUE_ENTER_CRITICAL
@@ -70,10 +86,9 @@ queue__next_index(size_t index, size_t ring_size)
 #else
 #define QUEUE__HANDLE_FULL(q, ring_size, status_var)                           \
         do {                                                                   \
+                (void)(q);                                                     \
                 (void)(ring_size);                                             \
-                (void)(status_var);                                            \
-                QUEUE_EXIT_CRITICAL();                                         \
-                return QUEUE_STATUS_FULL;                                      \
+                (status_var) = QUEUE_STATUS_FULL;                              \
         } while (0)
 #endif
 
@@ -149,8 +164,12 @@ queue__next_index(size_t index, size_t ring_size)
                         QUEUE__HANDLE_FULL(q, ring_size, status);              \
                 }                                                              \
                                                                                \
-                q->buffer[q->head] = *item;                                    \
-                q->head = next_head;                                           \
+                if (status != QUEUE_STATUS_FULL) {                             \
+                        q->buffer[q->head] = *item;                            \
+                        QUEUE_BARRIER();                                       \
+                        q->head = next_head;                                   \
+                }                                                              \
+                                                                               \
                 QUEUE_EXIT_CRITICAL();                                         \
                 return status;                                                 \
         }                                                                      \
@@ -170,6 +189,7 @@ queue__next_index(size_t index, size_t ring_size)
                 }                                                              \
                                                                                \
                 *out = q->buffer[q->tail];                                     \
+                QUEUE_BARRIER();                                               \
                 q->tail = queue__next_index(q->tail, ring_size);               \
                 QUEUE_EXIT_CRITICAL();                                         \
                 return QUEUE_STATUS_OK;                                        \

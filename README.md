@@ -62,12 +62,19 @@ void example(void)
 ## Configuration
 
 - `QUEUE_OVERWRITE_ON_FULL` (default `1`)
-  - `1`: enqueue returns `QUEUE_STATUS_OVERWROTE` when it drops the oldest item
-  - `0`: enqueue returns `QUEUE_STATUS_FULL` and does not modify the queue
+  - `1`: enqueue returns `QUEUE_STATUS_OVERWROTE` when it drops the oldest item. **WARNING: Requires critical sections in concurrent SPSC.**
+  - `0`: enqueue returns `QUEUE_STATUS_FULL` and does not modify the queue. **Safe for lock-free SPSC on most platforms.**
 - `QUEUE_ENTER_CRITICAL()` / `QUEUE_EXIT_CRITICAL()` (default no-op)
   - In overwrite mode, the producer may advance the consumer index on full.
   - Define these macros (e.g., disable/enable interrupts) if producer/consumer
     can preempt each other (ISR vs main loop).
+
+## Concurrency
+
+This library is designed for Single-Producer Single-Consumer (SPSC) use cases.
+
+1. **Fail-on-full mode**: Generally lock-free on architectures where `size_t` access is atomic. Internal memory barriers are included.
+2. **Overwrite-on-full mode**: **NOT lock-free**. The producer and consumer both modify the `tail` index. You **must** provide `QUEUE_ENTER_CRITICAL` and `QUEUE_EXIT_CRITICAL` implementations (e.g., disabling interrupts) if there is preemption between the producer and consumer.
 
 ## Build & Test
 
