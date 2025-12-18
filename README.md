@@ -11,8 +11,6 @@ A small C11, embedded-oriented queue implemented as a typed ring buffer.
 - `src/queue.h` – Public API (macro-generated typed queues).
 - `src/queue_version.h.in` – Template for generating the version header.
 - `src/queue.c` – Stub for building `libqueue`.
-- `test/test_queue.c` – Overwrite-on-full tests + CAN message example.
-- `test/test_queue_fail.c` – Fail-on-full tests.
 
 ## Versioning
 
