@@ -26,3 +26,19 @@ queue_test_overwrite_mt_exe = executable('queue_test_overwrite_mt', 'test_queue_
                                        dependencies: [thread_dep],
                                        link_with: [queue_lib])
 test('queue_test_overwrite_mt', queue_test_overwrite_mt_exe)
+
+# Additional tests for coverage
+wrap_exe = executable('queue_test_wrap', 'test_queue_wrap.c',
+                        include_directories: inc,
+                        link_with: [queue_lib])
+test('queue_test_wrap', wrap_exe)
+
+fail_mode_exe = executable('queue_test_fail_mode', 'test_queue_fail_mode.c',
+                         include_directories: inc,
+                         link_with: [queue_lib])
+test('queue_test_fail_mode', fail_mode_exe)
+
+critical_exe = executable('queue_test_critical', 'test_queue_critical.c',
+                         include_directories: inc,
+                         link_with: [queue_lib])
+test('queue_test_critical', critical_exe)
