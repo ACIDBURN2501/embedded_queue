@@ -8,7 +8,7 @@
 - Single test (fail-on-full): `meson test -C build queue:queue_test_fail --print-errorlogs`
 
 ## Lint / Format
-- Lint: `clang-tidy -p build src/queue.c test/test_queue.c` (uses `build/compile_commands.json`)
+- Lint: `clang-tidy -p build src/queue.c test/*.c` (uses `build/compile_commands.json`)
 - Format: `clang-format -i src/*.c src/*.h test/*.c` (uses `.clang-format`)
 
 ## Code Style

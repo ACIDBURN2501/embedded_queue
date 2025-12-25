@@ -9,7 +9,7 @@ A small C11, embedded-oriented queue implemented as a typed ring buffer.
 ## Layout
 
 - `src/queue.h` – Public API (macro-generated typed queues).
-- `src/queue_version.h.in` – Template for generating the version header.
+- `src/queue_version.h.in` – Template for generating the version header (output `queue_version.h` is generated in the build directory).
 - `src/queue.c` – Stub for building `libqueue`.
 
 ## Versioning
