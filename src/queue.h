@@ -60,11 +60,11 @@
 #endif
 
 typedef enum {
-        QUEUE_STATUS_OK = 0,
-        QUEUE_STATUS_EMPTY,
-        QUEUE_STATUS_FULL,
-        QUEUE_STATUS_BAD_ARG,
-        QUEUE_STATUS_OVERWROTE
+        QUEUE_STATUS_OK = 0,          /* operation successful */
+        QUEUE_STATUS_EMPTY,           /* dequeue attempted on empty queue */
+        QUEUE_STATUS_FULL,            /* enqueue attempted on full queue (non‑overwrite mode) */
+        QUEUE_STATUS_BAD_ARG,         /* NULL pointer passed to API */
+        QUEUE_STATUS_OVERWROTE        /* item enqueued by overwriting oldest element */
 } queue_status_t;
 
 static inline size_t
@@ -116,12 +116,18 @@ queue__next_index(size_t index, size_t ring_size)
                 q->head = 0U;                                                  \
                 q->tail = 0U;                                                  \
         }                                                                      \
-                                                                               \
+        static inline QUEUE__UNUSED void name##_clear(name##_t *q)            \
+        {                                                                      \
+                if (!q) {                                                      \
+                        return;                                                \
+                }                                                              \
+                q->head = 0U;                                                  \
+                q->tail = 0U;                                                  \
+        }                                                                      \
         static inline QUEUE__UNUSED bool name##_is_empty(const name##_t *q)    \
         {                                                                      \
                 return !q || (q->head == q->tail);                             \
         }                                                                      \
-                                                                               \
         static inline QUEUE__UNUSED bool name##_is_full(const name##_t *q)     \
         {                                                                      \
                 if (!q) {                                                      \
@@ -130,12 +136,10 @@ queue__next_index(size_t index, size_t ring_size)
                 const size_t ring_size = (capacity) + 1U;                      \
                 return queue__next_index(q->head, ring_size) == q->tail;       \
         }                                                                      \
-                                                                               \
         static inline QUEUE__UNUSED size_t name##_capacity(void)               \
         {                                                                      \
                 return (capacity);                                             \
         }                                                                      \
-                                                                               \
         static inline QUEUE__UNUSED size_t name##_count(const name##_t *q)     \
         {                                                                      \
                 if (!q) {                                                      \
@@ -147,52 +151,54 @@ queue__next_index(size_t index, size_t ring_size)
                 }                                                              \
                 return ring_size - (q->tail - q->head);                        \
         }                                                                      \
-                                                                               \
-        static inline QUEUE__UNUSED queue_status_t name##_enqueue(             \
-            name##_t *q, const type *item)                                     \
+        static inline QUEUE__UNUSED queue_status_t name##_enqueue(name##_t *q, const type *item)             \
         {                                                                      \
                 if (!q || !item) {                                             \
                         return QUEUE_STATUS_BAD_ARG;                           \
                 }                                                              \
-                                                                               \
                 const size_t ring_size = (capacity) + 1U;                      \
                 queue_status_t status = QUEUE_STATUS_OK;                       \
-                                                                               \
                 QUEUE_ENTER_CRITICAL();                                        \
                 size_t next_head = queue__next_index(q->head, ring_size);      \
                 if (next_head == q->tail) {                                    \
                         QUEUE__HANDLE_FULL(q, ring_size, status);              \
                 }                                                              \
-                                                                               \
                 if (status != QUEUE_STATUS_FULL) {                             \
                         q->buffer[q->head] = *item;                            \
                         QUEUE_BARRIER();                                       \
                         q->head = next_head;                                   \
                 }                                                              \
-                                                                               \
                 QUEUE_EXIT_CRITICAL();                                         \
                 return status;                                                 \
         }                                                                      \
-                                                                               \
-        static inline QUEUE__UNUSED queue_status_t name##_dequeue(name##_t *q, \
-                                                                  type *out)   \
+        static inline QUEUE__UNUSED queue_status_t name##_dequeue(name##_t *q, type *out)   \
         {                                                                      \
                 if (!q || !out) {                                              \
                         return QUEUE_STATUS_BAD_ARG;                           \
                 }                                                              \
-                                                                               \
                 const size_t ring_size = (capacity) + 1U;                      \
                 QUEUE_ENTER_CRITICAL();                                        \
                 if (q->head == q->tail) {                                      \
                         QUEUE_EXIT_CRITICAL();                                 \
                         return QUEUE_STATUS_EMPTY;                             \
                 }                                                              \
-                                                                               \
                 *out = q->buffer[q->tail];                                     \
                 QUEUE_BARRIER();                                               \
                 q->tail = queue__next_index(q->tail, ring_size);               \
                 QUEUE_EXIT_CRITICAL();                                         \
                 return QUEUE_STATUS_OK;                                        \
-        }
+        }                                                                      \
+
+
+
+
+/* Generic clear macro for queues generated by QUEUE_DEFINE */
+#define QUEUE_CLEAR(name, q)                 \
+        do {                                 \
+                if (q) {                     \
+                        (q)->head = 0U;      \
+                        (q)->tail = 0U;      \
+                }                            \
+        } while (0)
 
 #endif /* QUEUE_H */

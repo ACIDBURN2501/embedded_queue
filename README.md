@@ -52,6 +52,12 @@ void example(void)
         can_msg_t tx = {.id = 0x123U, .dlc = 8U, .data = {0}};
         (void)can_msg_queue_enqueue(&q, &tx);
 
+        // Clear the queue (head and tail reset, buffer untouched)
+        // Either use the generated inline function:
+        can_msg_queue_clear(&q);
+        // Or the generic macro (useful when the queue type is a macro argument):
+        QUEUE_CLEAR(can_msg_queue, &q);
+
         can_msg_t rx;
         if (can_msg_queue_dequeue(&q, &rx) == QUEUE_STATUS_OK) {
                 /* use rx */
