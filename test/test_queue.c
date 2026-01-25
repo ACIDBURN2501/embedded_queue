@@ -36,7 +36,7 @@ make_can_msg(uint32_t id, uint8_t seed)
 int
 main(void)
 {
-        can_msg_queue_t q;
+        can_msg_queue_t q = {0};
         can_msg_queue_init(&q);
         assert(can_msg_queue_capacity() == 3U);
         assert(can_msg_queue_is_empty(&q));

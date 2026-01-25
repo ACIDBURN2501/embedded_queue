@@ -46,7 +46,7 @@ QUEUE_DEFINE(can_msg_queue, can_msg_t, 16)
 
 void example(void)
 {
-        can_msg_queue_t q;
+        can_msg_queue_t q = {0};
         can_msg_queue_init(&q);
 
         can_msg_t tx = {.id = 0x123U, .dlc = 8U, .data = {0}};
